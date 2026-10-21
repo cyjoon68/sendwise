@@ -1,0 +1,191 @@
+[
+  {
+    "name": "ad at 20:59 is allowed",
+    "input": {
+      "purpose": "AD",
+      "scheduledAt": "2026-10-22T20:59:00+09:00",
+      "body": "(광고)센드와이즈\n본문\n무료수신거부 080-000-0000",
+      "companyName": "센드와이즈"
+    },
+    "expected": {
+      "inBlockedHours": false,
+      "hasPrefix": true,
+      "hasOptOut": true,
+      "hasCompanyName": true,
+      "allowed": true
+    }
+  },
+  {
+    "name": "ad at 21:00 is blocked",
+    "input": {
+      "purpose": "AD",
+      "scheduledAt": "2026-10-22T21:00:00+09:00",
+      "body": "(광고)센드와이즈\n본문\n무료수신거부 080-000-0000",
+      "companyName": "센드와이즈"
+    },
+    "expected": {
+      "inBlockedHours": true,
+      "hasPrefix": true,
+      "hasOptOut": true,
+      "hasCompanyName": true,
+      "allowed": false
+    }
+  },
+  {
+    "name": "ad at 07:59 is blocked",
+    "input": {
+      "purpose": "AD",
+      "scheduledAt": "2026-10-23T07:59:00+09:00",
+      "body": "(광고)센드와이즈\n본문\n무료수신거부 080-000-0000",
+      "companyName": "센드와이즈"
+    },
+    "expected": {
+      "inBlockedHours": true,
+      "hasPrefix": true,
+      "hasOptOut": true,
+      "hasCompanyName": true,
+      "allowed": false
+    }
+  },
+  {
+    "name": "ad at 08:00 is allowed",
+    "input": {
+      "purpose": "AD",
+      "scheduledAt": "2026-10-23T08:00:00+09:00",
+      "body": "(광고)센드와이즈\n본문\n무료수신거부 080-000-0000",
+      "companyName": "센드와이즈"
+    },
+    "expected": {
+      "inBlockedHours": false,
+      "hasPrefix": true,
+      "hasOptOut": true,
+      "hasCompanyName": true,
+      "allowed": true
+    }
+  },
+  {
+    "name": "ad at 12:00 utc is 21:00 kst",
+    "input": {
+      "purpose": "AD",
+      "scheduledAt": "2026-10-22T12:00:00Z",
+      "body": "(광고)센드와이즈\n본문\n무료수신거부 080-000-0000",
+      "companyName": "센드와이즈"
+    },
+    "expected": {
+      "inBlockedHours": true,
+      "hasPrefix": true,
+      "hasOptOut": true,
+      "hasCompanyName": true,
+      "allowed": false
+    }
+  },
+  {
+    "name": "ad at 11:59 utc is 20:59 kst",
+    "input": {
+      "purpose": "AD",
+      "scheduledAt": "2026-10-22T11:59:00Z",
+      "body": "(광고)센드와이즈\n본문\n무료수신거부 080-000-0000",
+      "companyName": "센드와이즈"
+    },
+    "expected": {
+      "inBlockedHours": false,
+      "hasPrefix": true,
+      "hasOptOut": true,
+      "hasCompanyName": true,
+      "allowed": true
+    }
+  },
+  {
+    "name": "missing ad prefix",
+    "input": {
+      "purpose": "AD",
+      "scheduledAt": "2026-10-22T20:59:00+09:00",
+      "body": "센드와이즈\n본문\n무료수신거부 080-000-0000",
+      "companyName": "센드와이즈"
+    },
+    "expected": {
+      "inBlockedHours": false,
+      "hasPrefix": false,
+      "hasOptOut": true,
+      "hasCompanyName": true,
+      "allowed": false
+    }
+  },
+  {
+    "name": "prefix not at start",
+    "input": {
+      "purpose": "AD",
+      "scheduledAt": "2026-10-22T20:59:00+09:00",
+      "body": "본문 (광고)센드와이즈\n무료수신거부 080-000-0000",
+      "companyName": "센드와이즈"
+    },
+    "expected": {
+      "inBlockedHours": false,
+      "hasPrefix": false,
+      "hasOptOut": true,
+      "hasCompanyName": true,
+      "allowed": false
+    }
+  },
+  {
+    "name": "missing opt-out",
+    "input": {
+      "purpose": "AD",
+      "scheduledAt": "2026-10-22T20:59:00+09:00",
+      "body": "(광고)센드와이즈\n본문",
+      "companyName": "센드와이즈"
+    },
+    "expected": {
+      "inBlockedHours": false,
+      "hasPrefix": true,
+      "hasOptOut": false,
+      "hasCompanyName": true,
+      "allowed": false
+    }
+  },
+  {
+    "name": "different opt-out number",
+    "input": {
+      "purpose": "AD",
+      "scheduledAt": "2026-10-22T20:59:00+09:00",
+      "body": "(광고)센드와이즈\n본문\n무료수신거부 080-123-4567",
+      "companyName": "센드와이즈"
+    },
+    "expected": {
+      "inBlockedHours": false,
+      "hasPrefix": true,
+      "hasOptOut": false,
+      "hasCompanyName": true,
+      "allowed": false
+    }
+  },
+  {
+    "name": "missing company name",
+    "input": {
+      "purpose": "AD",
+      "scheduledAt": "2026-10-22T20:59:00+09:00",
+      "body": "(광고)\n본문\n무료수신거부 080-000-0000",
+      "companyName": "센드와이즈"
+    },
+    "expected": {
+      "inBlockedHours": false,
+      "hasPrefix": true,
+      "hasOptOut": true,
+      "hasCompanyName": false,
+      "allowed": false
+    }
+  },
+  {
+    "name": "auth at 21:00 is allowed",
+    "input": {
+      "purpose": "AUTH",
+      "scheduledAt": "2026-10-22T21:00:00+09:00",
+      "body": "인증번호 123456",
+      "companyName": ""
+    },
+    "expected": {
+      "inBlockedHours": true,
+      "allowed": true
+    }
+  }
+]

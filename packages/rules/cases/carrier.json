@@ -1,0 +1,192 @@
+[
+  {
+    "name": "SKT 0 maps to SUCCESS",
+    "input": {
+      "carrier": "SKT",
+      "code": "0"
+    },
+    "expected": {
+      "common": "SUCCESS"
+    }
+  },
+  {
+    "name": "SKT 101 maps to INVALID_NUMBER",
+    "input": {
+      "carrier": "SKT",
+      "code": "101"
+    },
+    "expected": {
+      "common": "INVALID_NUMBER"
+    }
+  },
+  {
+    "name": "SKT 102 maps to OPTED_OUT",
+    "input": {
+      "carrier": "SKT",
+      "code": "102"
+    },
+    "expected": {
+      "common": "OPTED_OUT"
+    }
+  },
+  {
+    "name": "SKT 201 maps to DEVICE_OFF",
+    "input": {
+      "carrier": "SKT",
+      "code": "201"
+    },
+    "expected": {
+      "common": "DEVICE_OFF"
+    }
+  },
+  {
+    "name": "SKT 301 maps to SPAM_BLOCKED",
+    "input": {
+      "carrier": "SKT",
+      "code": "301"
+    },
+    "expected": {
+      "common": "SPAM_BLOCKED"
+    }
+  },
+  {
+    "name": "SKT 999 maps to ETC",
+    "input": {
+      "carrier": "SKT",
+      "code": "999"
+    },
+    "expected": {
+      "common": "ETC"
+    }
+  },
+  {
+    "name": "KT OK maps to SUCCESS",
+    "input": {
+      "carrier": "KT",
+      "code": "OK"
+    },
+    "expected": {
+      "common": "SUCCESS"
+    }
+  },
+  {
+    "name": "KT E101 maps to INVALID_NUMBER",
+    "input": {
+      "carrier": "KT",
+      "code": "E101"
+    },
+    "expected": {
+      "common": "INVALID_NUMBER"
+    }
+  },
+  {
+    "name": "KT E102 maps to OPTED_OUT",
+    "input": {
+      "carrier": "KT",
+      "code": "E102"
+    },
+    "expected": {
+      "common": "OPTED_OUT"
+    }
+  },
+  {
+    "name": "KT E201 maps to DEVICE_OFF",
+    "input": {
+      "carrier": "KT",
+      "code": "E201"
+    },
+    "expected": {
+      "common": "DEVICE_OFF"
+    }
+  },
+  {
+    "name": "KT E301 maps to SPAM_BLOCKED",
+    "input": {
+      "carrier": "KT",
+      "code": "E301"
+    },
+    "expected": {
+      "common": "SPAM_BLOCKED"
+    }
+  },
+  {
+    "name": "KT E999 maps to ETC",
+    "input": {
+      "carrier": "KT",
+      "code": "E999"
+    },
+    "expected": {
+      "common": "ETC"
+    }
+  },
+  {
+    "name": "LGU S maps to SUCCESS",
+    "input": {
+      "carrier": "LGU",
+      "code": "S"
+    },
+    "expected": {
+      "common": "SUCCESS"
+    }
+  },
+  {
+    "name": "LGU N maps to INVALID_NUMBER",
+    "input": {
+      "carrier": "LGU",
+      "code": "N"
+    },
+    "expected": {
+      "common": "INVALID_NUMBER"
+    }
+  },
+  {
+    "name": "LGU R maps to OPTED_OUT",
+    "input": {
+      "carrier": "LGU",
+      "code": "R"
+    },
+    "expected": {
+      "common": "OPTED_OUT"
+    }
+  },
+  {
+    "name": "LGU D maps to DEVICE_OFF",
+    "input": {
+      "carrier": "LGU",
+      "code": "D"
+    },
+    "expected": {
+      "common": "DEVICE_OFF"
+    }
+  },
+  {
+    "name": "LGU P maps to SPAM_BLOCKED",
+    "input": {
+      "carrier": "LGU",
+      "code": "P"
+    },
+    "expected": {
+      "common": "SPAM_BLOCKED"
+    }
+  },
+  {
+    "name": "LGU X maps to ETC",
+    "input": {
+      "carrier": "LGU",
+      "code": "X"
+    },
+    "expected": {
+      "common": "ETC"
+    }
+  },
+  {
+    "name": "unknown skt code",
+    "input": {
+      "carrier": "SKT",
+      "code": "12345"
+    },
+    "expected": {
+      "common": null
+    }
+  }
+]

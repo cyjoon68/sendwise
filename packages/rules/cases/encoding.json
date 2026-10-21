@@ -1,0 +1,146 @@
+[
+  {
+    "name": "completed hangul syllable",
+    "input": {
+      "text": "가"
+    },
+    "expected": {
+      "encodable": true,
+      "bytes": 2,
+      "inHangul2350": true,
+      "unencodable": []
+    }
+  },
+  {
+    "name": "ddom outside 2350",
+    "input": {
+      "text": "똠"
+    },
+    "expected": {
+      "encodable": false,
+      "bytes": null,
+      "inHangul2350": false,
+      "unencodable": [
+        "똠"
+      ]
+    }
+  },
+  {
+    "name": "hyaet outside 2350",
+    "input": {
+      "text": "햏"
+    },
+    "expected": {
+      "encodable": false,
+      "bytes": null,
+      "inHangul2350": false,
+      "unencodable": [
+        "햏"
+      ]
+    }
+  },
+  {
+    "name": "last modern hangul outside 2350",
+    "input": {
+      "text": "힣"
+    },
+    "expected": {
+      "encodable": false,
+      "bytes": null,
+      "inHangul2350": false,
+      "unencodable": [
+        "힣"
+      ]
+    }
+  },
+  {
+    "name": "emoji",
+    "input": {
+      "text": "😀"
+    },
+    "expected": {
+      "encodable": false,
+      "bytes": null,
+      "inHangul2350": false,
+      "unencodable": [
+        "😀"
+      ]
+    }
+  },
+  {
+    "name": "ascii and hangul",
+    "input": {
+      "text": "Hi안녕"
+    },
+    "expected": {
+      "encodable": true,
+      "bytes": 6,
+      "inHangul2350": false,
+      "unencodable": []
+    }
+  },
+  {
+    "name": "ascii hangul and emoji",
+    "input": {
+      "text": "Hi안녕😀"
+    },
+    "expected": {
+      "encodable": false,
+      "bytes": null,
+      "inHangul2350": false,
+      "unencodable": [
+        "😀"
+      ]
+    }
+  },
+  {
+    "name": "won sign absent",
+    "input": {
+      "text": "₩"
+    },
+    "expected": {
+      "encodable": false,
+      "bytes": null,
+      "inHangul2350": false,
+      "unencodable": [
+        "₩"
+      ]
+    }
+  },
+  {
+    "name": "reference mark",
+    "input": {
+      "text": "※"
+    },
+    "expected": {
+      "encodable": true,
+      "bytes": 2,
+      "inHangul2350": false,
+      "unencodable": []
+    }
+  },
+  {
+    "name": "hanja",
+    "input": {
+      "text": "中"
+    },
+    "expected": {
+      "encodable": true,
+      "bytes": 2,
+      "inHangul2350": false,
+      "unencodable": []
+    }
+  },
+  {
+    "name": "jamo",
+    "input": {
+      "text": "ㄱ"
+    },
+    "expected": {
+      "encodable": true,
+      "bytes": 2,
+      "inHangul2350": false,
+      "unencodable": []
+    }
+  }
+]

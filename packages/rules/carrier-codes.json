@@ -1,0 +1,27 @@
+{
+  "mock": true,
+  "SKT": {
+    "0": "SUCCESS",
+    "101": "INVALID_NUMBER",
+    "102": "OPTED_OUT",
+    "201": "DEVICE_OFF",
+    "301": "SPAM_BLOCKED",
+    "999": "ETC"
+  },
+  "KT": {
+    "OK": "SUCCESS",
+    "E101": "INVALID_NUMBER",
+    "E102": "OPTED_OUT",
+    "E201": "DEVICE_OFF",
+    "E301": "SPAM_BLOCKED",
+    "E999": "ETC"
+  },
+  "LGU": {
+    "S": "SUCCESS",
+    "N": "INVALID_NUMBER",
+    "R": "OPTED_OUT",
+    "D": "DEVICE_OFF",
+    "P": "SPAM_BLOCKED",
+    "X": "ETC"
+  }
+}

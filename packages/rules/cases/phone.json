@@ -1,0 +1,72 @@
+[
+  {
+    "name": "hyphenated mobile",
+    "input": {
+      "phone": "010-1234-5678"
+    },
+    "expected": {
+      "normalized": "01012345678",
+      "valid": true
+    }
+  },
+  {
+    "name": "digits only",
+    "input": {
+      "phone": "01012345678"
+    },
+    "expected": {
+      "normalized": "01012345678",
+      "valid": true
+    }
+  },
+  {
+    "name": "country code with spaces",
+    "input": {
+      "phone": "+82 10 1234 5678"
+    },
+    "expected": {
+      "normalized": "01012345678",
+      "valid": true
+    }
+  },
+  {
+    "name": "mobile with spaces",
+    "input": {
+      "phone": "010 1234 5678"
+    },
+    "expected": {
+      "normalized": "01012345678",
+      "valid": true
+    }
+  },
+  {
+    "name": "short mobile",
+    "input": {
+      "phone": "010-1234-567"
+    },
+    "expected": {
+      "normalized": null,
+      "valid": false
+    }
+  },
+  {
+    "name": "seoul landline",
+    "input": {
+      "phone": "02-1234-5678"
+    },
+    "expected": {
+      "normalized": null,
+      "valid": false
+    }
+  },
+  {
+    "name": "not a number",
+    "input": {
+      "phone": "abc"
+    },
+    "expected": {
+      "normalized": null,
+      "valid": false
+    }
+  }
+]

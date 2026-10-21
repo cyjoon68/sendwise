@@ -1,0 +1,30 @@
+{
+  "sms": {
+    "maxBytes": 90
+  },
+  "lms": {
+    "maxBytes": 2000
+  },
+  "ad": {
+    "blockedHours": {
+      "from": "21:00",
+      "to": "08:00",
+      "fromInclusive": true,
+      "toInclusive": false,
+      "zone": "Asia/Seoul"
+    },
+    "requiredPrefix": "(광고)",
+    "companyNameRequired": true,
+    "optOutText": "무료수신거부 080-000-0000"
+  },
+  "unitPrice": {
+    "SMS": 9,
+    "LMS": 30,
+    "ALIMTALK": 7
+  },
+  "encoding": {
+    "name": "EUC-KR",
+    "asciiBytes": 1,
+    "ksx1001Bytes": 2
+  }
+}
