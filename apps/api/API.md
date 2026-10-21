@@ -4,7 +4,7 @@
 
 인증은 없어요. 고객사는 요청의 `clientId`로 구분해요.
 
-시드 데이터는 고객사 `1` (`demo`), 잔액 `1000000`, 승인된 발신번호 `0212345678`, 승인된 알림톡 템플릿 `WELCOME`, 수신거부 `01099998888`이에요.
+시드 데이터는 고객사 `1` (`demo`), 잔액 `1000000`, 승인된 발신번호 `0212345678`, 승인된 알림톡 템플릿 `ORDER_SHIPPED`와 `AUTH_CODE`, 수신거부 `01099998888`이에요. `WELCOME`는 승인 상태가 아니에요.
 
 ## 실행과 테스트
 
@@ -31,10 +31,10 @@ apps/api/gradlew -p apps/api bootRun
   "messageId": "15",
   "carrier": "SKT",
   "recipient": "01012345670",
-  "body": "안녕 홍길동",
+  "body": "홍길동님, 주문 A1가 출고되었습니다.",
   "channel": "ALIMTALK",
-  "templateCode": "WELCOME",
-  "variables": { "name": "홍길동" }
+  "templateCode": "ORDER_SHIPPED",
+  "variables": { "name": "홍길동", "orderNo": "A1" }
 }
 ```
 
@@ -286,9 +286,9 @@ UPDATE balance SET amount = amount - :cost WHERE client_id = :id AND amount >= :
   {
     "id": 1,
     "clientId": 1,
-    "templateCode": "WELCOME",
-    "body": "안녕 #{name}",
-    "variables": ["name"],
+    "templateCode": "ORDER_SHIPPED",
+    "body": "#{name}님, 주문 #{orderNo}가 출고되었습니다.",
+    "variables": ["name", "orderNo"],
     "status": "APPROVED"
   }
 ]

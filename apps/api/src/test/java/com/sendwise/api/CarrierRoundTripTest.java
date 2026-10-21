@@ -36,7 +36,7 @@ class CarrierRoundTripTest {
     private static final HttpServer STUB;
     private static final int STUB_PORT;
     private static final ObjectMapper JSON = new ObjectMapper();
-    private static final String WELCOME = "안녕 #{name}";
+    private static final String ORDER_SHIPPED = "#{name}님, 주문 #{orderNo}가 출고되었습니다.";
     private static final Pattern PLACEHOLDER = Pattern.compile("#\\{([^{}]+)}");
 
     static {
@@ -85,7 +85,7 @@ class CarrierRoundTripTest {
     void sendThenCallbackUpdatesStatus() throws Exception {
         MODE.set("202");
         String phone = "01012345670";
-        long campaignId = create("ALIMTALK", "NONE", phone, "WELCOME");
+        long campaignId = create("ALIMTALK", "NONE", phone, "ORDER_SHIPPED");
         JsonNode sent = awaitBody(phone);
         long messageId = jdbc.queryForObject(
                 "select id from message where campaign_id = ? and recipient = ?",
@@ -98,7 +98,7 @@ class CarrierRoundTripTest {
         assertEquals(phone, sent.get("recipient").asText());
         assertEquals("안녕", sent.get("body").asText());
         assertEquals("ALIMTALK", sent.get("channel").asText());
-        assertEquals("WELCOME", sent.get("templateCode").asText());
+        assertEquals("ORDER_SHIPPED", sent.get("templateCode").asText());
         assertTrue(sent.get("variables").isNull());
 
         ResponseEntity<Map> callback = rest.postForEntity("/carrier/SKT/results", Map.of(
@@ -155,11 +155,20 @@ class CarrierRoundTripTest {
     void matchedAlimtalkIsDeliveredWithoutFallback() throws Exception {
         MODE.set("202");
         String phone = "01020000000";
-        long campaignId = createRow("ALIMTALK", "NONE", null, WELCOME, phone, Map.of("name", "홍길동"), "WELCOME");
+        long campaignId = createRow(
+                "ALIMTALK",
+                "NONE",
+                null,
+                ORDER_SHIPPED,
+                phone,
+                Map.of("name", "홍길동", "orderNo", "A1"),
+                "ORDER_SHIPPED"
+        );
         JsonNode sent = awaitBody(phone);
-        assertEquals("안녕 홍길동", sent.get("body").asText());
+        assertEquals("홍길동님, 주문 A1가 출고되었습니다.", sent.get("body").asText());
         assertEquals("홍길동", sent.get("variables").get("name").asText());
-        assertTrue(templateMatches(WELCOME, sent));
+        assertEquals("A1", sent.get("variables").get("orderNo").asText());
+        assertTrue(templateMatches(ORDER_SHIPPED, sent));
         long messageId = messageId(campaignId, phone);
         ResponseEntity<Map> callback = rest.postForEntity("/carrier/SKT/results", Map.of(
                 "messageId", Long.toString(messageId),
@@ -176,11 +185,11 @@ class CarrierRoundTripTest {
     void mismatchedAlimtalkStartsSameFallback() throws Exception {
         MODE.set("202");
         String phone = "01020000003";
-        long campaignId = createRow("ALIMTALK", "SAME", null, "다른 문구", phone, Map.of("name", "홍길동"), "WELCOME");
+        long campaignId = createRow("ALIMTALK", "SAME", null, "다른 문구", phone, Map.of("name", "홍길동", "orderNo", "A1"), "ORDER_SHIPPED");
         JsonNode sent = awaitBody(phone);
         assertEquals("다른 문구", sent.get("body").asText());
         assertEquals("홍길동", sent.get("variables").get("name").asText());
-        assertTrue(!templateMatches(WELCOME, sent));
+        assertTrue(!templateMatches(ORDER_SHIPPED, sent));
         long messageId = messageId(campaignId, phone);
         ResponseEntity<Map> callback = rest.postForEntity("/carrier/SKT/results", Map.of(
                 "messageId", Long.toString(messageId),
@@ -199,9 +208,9 @@ class CarrierRoundTripTest {
     void mismatchedAlimtalkStartsCustomFallback() throws Exception {
         MODE.set("202");
         String phone = "01020000006";
-        long campaignId = createRow("ALIMTALK", "CUSTOM", "대체 #{name}", "다른 문구", phone, Map.of("name", "홍길동"), "WELCOME");
+        long campaignId = createRow("ALIMTALK", "CUSTOM", "대체 #{name}", "다른 문구", phone, Map.of("name", "홍길동", "orderNo", "A1"), "ORDER_SHIPPED");
         JsonNode sent = awaitBody(phone);
-        assertTrue(!templateMatches(WELCOME, sent));
+        assertTrue(!templateMatches(ORDER_SHIPPED, sent));
         long messageId = messageId(campaignId, phone);
         ResponseEntity<Map> callback = rest.postForEntity("/carrier/SKT/results", Map.of(
                 "messageId", Long.toString(messageId),
