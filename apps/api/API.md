@@ -4,7 +4,7 @@
 
 인증은 없어요. 고객사는 요청의 `clientId`로 구분해요.
 
-시드 데이터는 고객사 `1` (`demo`), 잔액 `1000000`, 승인된 발신번호 `0212345678`, 승인된 알림톡 템플릿 `WELCOME`, 수신거부 `01099998888`이에요.
+시드 데이터는 고객사 `1` (`demo`), 잔액 `1000000`, 승인된 발신번호 `0212345678`, 승인된 알림톡 템플릿 `ORDER_SHIPPED`와 `AUTH_CODE`, 수신거부 `01099998888`이에요. `WELCOME`는 승인 상태가 아니에요.
 
 ## 실행과 테스트
 
@@ -31,14 +31,14 @@ apps/api/gradlew -p apps/api bootRun
   "messageId": "15",
   "carrier": "SKT",
   "recipient": "01012345670",
-  "body": "안녕",
+  "body": "홍길동님, 주문 A1가 출고되었습니다.",
   "channel": "ALIMTALK",
-  "templateCode": "WELCOME",
-  "variables": null
+  "templateCode": "ORDER_SHIPPED",
+  "variables": { "name": "홍길동", "orderNo": "A1" }
 }
 ```
 
-`messageId`는 숫자 아이디의 문자열이에요. 캠페인 요청에 변수 맵이 없어서 `variables`는 `null`이에요. 문자면 `templateCode`도 `null`이에요.
+`messageId`는 숫자 아이디의 문자열이에요. 알림톡은 수신자별 `variables`를 그대로 보내요. `body`는 `#{변수}`를 그 값으로 바꾼 문장이에요. 빠진 변수는 빈 문자열이에요. 그래서 승인된 템플릿과 값이 맞으면 모의 서버 본문 검사에 통과해요. 문자(`SMS`, `LMS`)는 바꾼 `body`만 보내고 `variables`는 `null`, `templateCode`도 `null`이에요.
 
 | 응답 | 처리 |
 |---|---|
@@ -111,6 +111,7 @@ Content-Type: application/json
 | `INVALID_SENDER` `SENDER_NOT_APPROVED` | 400 | 발신번호 형식 또는 승인 상태가 아니에요 |
 | `CLIENT_NOT_FOUND` | 404 | 고객사가 없어요 |
 | `RECIPIENTS_REQUIRED` `INVALID_RECIPIENT` `NO_RECIPIENTS` | 400 | 수신번호가 없거나 `010` 8자리가 아니에요 |
+| `INVALID_VARIABLES` | 400 | `variables`가 객체가 아니에요 |
 | `CHANNEL_MISMATCH` | 400 | 본문 길이와 채널이 달라요 |
 | `UNENCODABLE` | 400 | KS X 1001에 없는 글자예요 |
 | `BODY_TOO_LONG` | 400 | 2,000바이트를 넘어요 |
@@ -156,9 +157,15 @@ UPDATE balance SET amount = amount - :cost WHERE client_id = :id AND amount >= :
   "templateCode": null,
   "companyName": null,
   "scheduledAt": null,
-  "recipients": ["010-1234-5670"]
+  "recipients": [
+    { "phone": "010-1234-5670", "variables": { "name": "홍길동" } }
+  ]
 }
 ```
+
+수신자는 문자열 `"01012345670"`이어도 돼요. 그때 `variables`는 없어요. 객체면 `phone`(또는 `recipient`)과 `variables` 객체예요. `variables` 값은 문자열로 저장해요. 없는 키는 빈 문자열로 바꿔요.
+
+문자 채널은 바꾼 본문이 그 채널 길이와 같아야 해요. 알림톡 대체발송 `SAME`은 바꾼 본문, `CUSTOM`은 `fallbackBody`를 같은 변수로 바꾼 문장으로 금액을 잡아요.
 
 `channel`은 `SMS`, `LMS`, `ALIMTALK`이에요. `purpose`는 `AUTH`, `NORMAL`, `AD`예요. `fallback`은 `NONE`, `SAME`, `CUSTOM`이에요. `scheduledAt`을 생략하면 지금 시각으로 광고 시간을 검사해요. 형식은 ISO-8601이에요.
 
@@ -279,9 +286,9 @@ UPDATE balance SET amount = amount - :cost WHERE client_id = :id AND amount >= :
   {
     "id": 1,
     "clientId": 1,
-    "templateCode": "WELCOME",
-    "body": "안녕 #{name}",
-    "variables": ["name"],
+    "templateCode": "ORDER_SHIPPED",
+    "body": "#{name}님, 주문 #{orderNo}가 출고되었습니다.",
+    "variables": ["name", "orderNo"],
     "status": "APPROVED"
   }
 ]

@@ -38,6 +38,9 @@ public class MessageEntity {
     @Column(name = "template_code", length = 64)
     private String templateCode;
 
+    @Column(name = "variables_json", length = 4000)
+    private String variablesJson;
+
     @Column(name = "carrier_code", length = 32)
     private String carrierCode;
 
@@ -112,6 +115,14 @@ public class MessageEntity {
 
     public void setTemplateCode(String templateCode) {
         this.templateCode = templateCode;
+    }
+
+    public String getVariablesJson() {
+        return variablesJson;
+    }
+
+    public void setVariablesJson(String variablesJson) {
+        this.variablesJson = variablesJson;
     }
 
     public String getCarrierCode() {

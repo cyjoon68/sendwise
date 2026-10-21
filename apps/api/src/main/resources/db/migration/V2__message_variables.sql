@@ -1,0 +1,1 @@
+ALTER TABLE message ADD COLUMN variables_json VARCHAR(4000) NULL;

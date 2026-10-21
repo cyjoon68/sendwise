@@ -9,6 +9,7 @@ public record OutboundItem(
         String recipient,
         String body,
         String templateCode,
+        String variablesJson,
         String purpose,
         long seq,
         Instant notBefore
@@ -22,7 +23,7 @@ public record OutboundItem(
     }
 
     public OutboundItem withSeq(long next) {
-        return new OutboundItem(messageId, carrier, channel, recipient, body, templateCode, purpose, next, notBefore);
+        return new OutboundItem(messageId, carrier, channel, recipient, body, templateCode, variablesJson, purpose, next, notBefore);
     }
 
     public String queueKey() {

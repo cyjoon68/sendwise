@@ -75,7 +75,7 @@ public final class QueueWaitMain {
     }
 
     private static OutboundItem item(String purpose) {
-        return new OutboundItem(0, "SKT", "SMS", "01000000000", "a", null, purpose, 0, null);
+        return new OutboundItem(0, "SKT", "SMS", "01000000000", "a", null, null, purpose, 0, null);
     }
 
     private QueueWaitMain() {

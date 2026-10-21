@@ -1,5 +1,8 @@
 package com.sendwise.api.application;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.sendwise.api.domain.ApiError;
 import com.sendwise.api.domain.dispatch.OutboundItem;
 import com.sendwise.api.domain.dispatch.OutboundQueue;
@@ -7,6 +10,7 @@ import com.sendwise.api.domain.rules.AdPolicy;
 import com.sendwise.api.domain.rules.CodeCopy;
 import com.sendwise.api.domain.rules.MessageRules;
 import com.sendwise.api.domain.rules.PhoneNumbers;
+import com.sendwise.api.domain.rules.TemplateRender;
 import com.sendwise.api.domain.rules.TextMeasure;
 import com.sendwise.api.infra.balance.JdbcAccounts;
 import com.sendwise.api.infra.persistence.CampaignEntity;
@@ -50,6 +54,7 @@ public class CampaignService {
     private final OptOutRepository optOuts;
     private final OutboundQueue queue;
     private final Clock clock;
+    private final ObjectMapper mapper;
 
     public CampaignService(
             RuleTables tables,
@@ -60,7 +65,8 @@ public class CampaignService {
             TemplateRepository templates,
             OptOutRepository optOuts,
             OutboundQueue queue,
-            Clock clock
+            Clock clock,
+            ObjectMapper mapper
     ) {
         this.tables = tables;
         this.accounts = accounts;
@@ -71,6 +77,7 @@ public class CampaignService {
         this.optOuts = optOuts;
         this.queue = queue;
         this.clock = clock;
+        this.mapper = mapper;
     }
 
     @Transactional
@@ -91,17 +98,8 @@ public class CampaignService {
         }
         Instant when = command.scheduledAt() == null ? clock.instant() : command.scheduledAt();
         AdPolicy.check(purpose, command.body(), command.companyName(), when, rules);
-        if ("SMS".equals(channel) || "LMS".equals(channel)) {
-            requireChannel(measure, command.body(), channel);
-        }
-        long fallbackUnit = 0;
-        if (!"NONE".equals(fallback)) {
-            String fallbackText = "SAME".equals(fallback) ? command.body() : command.fallbackBody();
-            if (fallbackText == null || fallbackText.isBlank()) {
-                throw new ApiError(400, "FALLBACK_BODY_REQUIRED", "대체 문구를 입력해 주세요");
-            }
-            TextMeasure.Result sized = requireText(measure, fallbackText);
-            fallbackUnit = rules.price(sized.channel());
+        if ("CUSTOM".equals(fallback) && (command.fallbackBody() == null || command.fallbackBody().isBlank())) {
+            throw new ApiError(400, "FALLBACK_BODY_REQUIRED", "대체 문구를 입력해 주세요");
         }
         if ("ALIMTALK".equals(channel)) {
             if (command.templateCode() == null || command.templateCode().isBlank()) {
@@ -119,14 +117,11 @@ public class CampaignService {
         if (!accounts.clientExists(command.clientId())) {
             throw new ApiError(404, "CLIENT_NOT_FOUND", "고객사를 찾을 수 없어요");
         }
-        List<String> recipients = new ArrayList<>();
+        List<Prepared> recipients = new ArrayList<>();
         List<String> skipped = new ArrayList<>();
         Set<String> seen = new LinkedHashSet<>();
-        if (command.recipients() == null) {
-            throw new ApiError(400, "RECIPIENTS_REQUIRED", "수신번호를 입력해 주세요");
-        }
-        for (String raw : command.recipients()) {
-            PhoneNumbers.Normalized phone = PhoneNumbers.normalize(raw);
+        for (RecipientRow row : recipientRows(command.recipients())) {
+            PhoneNumbers.Normalized phone = PhoneNumbers.normalize(row.phone());
             if (!phone.valid()) {
                 throw new ApiError(400, "INVALID_RECIPIENT", "수신번호 형식을 확인해 주세요");
             }
@@ -137,13 +132,30 @@ public class CampaignService {
                 skipped.add(phone.normalized());
                 continue;
             }
-            recipients.add(phone.normalized());
+            String text = TemplateRender.render(command.body(), row.variables());
+            if (text.isBlank()) {
+                throw new ApiError(400, "BODY_REQUIRED", "본문을 입력해 주세요");
+            }
+            if ("SMS".equals(channel) || "LMS".equals(channel)) {
+                requireChannel(measure, text, channel);
+            }
+            long fallbackUnit = 0;
+            if (!"NONE".equals(fallback)) {
+                String fallbackText = "SAME".equals(fallback)
+                        ? text
+                        : TemplateRender.render(command.fallbackBody(), row.variables());
+                if (fallbackText.isBlank()) {
+                    throw new ApiError(400, "FALLBACK_BODY_REQUIRED", "대체 문구를 입력해 주세요");
+                }
+                fallbackUnit = rules.price(requireText(measure, fallbackText).channel());
+            }
+            recipients.add(new Prepared(phone.normalized(), text, variablesJson(row.variables()), fallbackUnit));
         }
         if (recipients.isEmpty()) {
             throw new ApiError(400, "NO_RECIPIENTS", "보낼 수 있는 수신번호가 없어요");
         }
         long unit = rules.price(channel);
-        long cost = (unit + fallbackUnit) * recipients.size();
+        long cost = recipients.stream().mapToLong(row -> unit + row.fallbackUnit()).sum();
         if (!accounts.debitIfEnough(command.clientId(), cost)) {
             long have = accounts.amount(command.clientId());
             throw new ApiError(402, "INSUFFICIENT_BALANCE", "잔액이 부족해요", Map.of(
@@ -168,17 +180,18 @@ public class CampaignService {
         campaign.setCreatedAt(now);
         campaigns.save(campaign);
         List<OutboundItem> outbound = new ArrayList<>();
-        for (String recipient : recipients) {
+        for (Prepared recipient : recipients) {
             MessageEntity message = new MessageEntity();
             message.setCampaign(campaign);
-            message.setRecipient(recipient);
-            message.setCarrier(PhoneNumbers.carrier(recipient));
+            message.setRecipient(recipient.phone());
+            message.setCarrier(PhoneNumbers.carrier(recipient.phone()));
             message.setChannel(channel);
-            message.setBody(command.body());
+            message.setBody(recipient.body());
             message.setTemplateCode("ALIMTALK".equals(channel) ? command.templateCode() : null);
+            message.setVariablesJson(recipient.variablesJson());
             message.setStatus("QUEUED");
             message.setCost(unit);
-            message.setReservedCost(fallbackUnit);
+            message.setReservedCost(recipient.fallbackUnit());
             message.setPurpose(purpose);
             message.setCreatedAt(now);
             messages.save(message);
@@ -186,9 +199,10 @@ public class CampaignService {
                     message.getId(),
                     message.getCarrier(),
                     channel,
-                    recipient,
-                    command.body(),
+                    recipient.phone(),
+                    recipient.body(),
                     message.getTemplateCode(),
+                    "ALIMTALK".equals(channel) ? recipient.variablesJson() : null,
                     purpose,
                     0,
                     command.scheduledAt()
@@ -311,6 +325,60 @@ public class CampaignService {
         });
     }
 
+    private List<RecipientRow> recipientRows(JsonNode node) {
+        if (node == null || node.isNull() || !node.isArray()) {
+            throw new ApiError(400, "RECIPIENTS_REQUIRED", "수신번호를 입력해 주세요");
+        }
+        List<RecipientRow> rows = new ArrayList<>();
+        for (JsonNode item : node) {
+            if (item.isTextual()) {
+                rows.add(new RecipientRow(item.asText(), null));
+                continue;
+            }
+            if (!item.isObject()) {
+                throw new ApiError(400, "INVALID_RECIPIENT", "수신번호 형식을 확인해 주세요");
+            }
+            String phone = item.path("phone").asText(null);
+            if (phone == null || phone.isBlank()) {
+                phone = item.path("recipient").asText(null);
+            }
+            rows.add(new RecipientRow(phone, variablesOf(item.get("variables"))));
+        }
+        return rows;
+    }
+
+    private Map<String, String> variablesOf(JsonNode values) {
+        if (values == null || values.isNull()) {
+            return null;
+        }
+        if (!values.isObject()) {
+            throw new ApiError(400, "INVALID_VARIABLES", "변수 값을 확인해 주세요");
+        }
+        Map<String, String> variables = new LinkedHashMap<>();
+        values.fields().forEachRemaining(entry -> variables.put(
+                entry.getKey(),
+                entry.getValue().isNull() ? "" : entry.getValue().asText()
+        ));
+        return variables.isEmpty() ? null : variables;
+    }
+
+    private String variablesJson(Map<String, String> variables) {
+        if (variables == null || variables.isEmpty()) {
+            return null;
+        }
+        try {
+            return mapper.writeValueAsString(variables);
+        } catch (JsonProcessingException exception) {
+            throw new ApiError(400, "INVALID_VARIABLES", "변수 값을 확인해 주세요");
+        }
+    }
+
+    private record RecipientRow(String phone, Map<String, String> variables) {
+    }
+
+    private record Prepared(String phone, String body, String variablesJson, long fallbackUnit) {
+    }
+
     public record CreateCampaign(
             Long clientId,
             String channel,
@@ -322,7 +390,7 @@ public class CampaignService {
             String templateCode,
             String companyName,
             Instant scheduledAt,
-            List<String> recipients
+            JsonNode recipients
     ) {
     }
 }

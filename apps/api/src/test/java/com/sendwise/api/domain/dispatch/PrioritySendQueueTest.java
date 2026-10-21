@@ -26,6 +26,6 @@ class PrioritySendQueueTest {
     }
 
     private OutboundItem item(String purpose, long id) {
-        return new OutboundItem(id, "SKT", "SMS", "01012345678", "a", null, purpose, 0, null);
+        return new OutboundItem(id, "SKT", "SMS", "01012345678", "a", null, null, purpose, 0, null);
     }
 }

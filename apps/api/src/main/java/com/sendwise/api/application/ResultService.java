@@ -3,8 +3,11 @@ package com.sendwise.api.application;
 import com.sendwise.api.domain.ApiError;
 import com.sendwise.api.domain.dispatch.OutboundItem;
 import com.sendwise.api.domain.dispatch.OutboundQueue;
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.sendwise.api.domain.rules.CodeCopy;
 import com.sendwise.api.domain.rules.MessageRules;
+import com.sendwise.api.domain.rules.TemplateRender;
 import com.sendwise.api.domain.rules.TextMeasure;
 import com.sendwise.api.infra.balance.JdbcAccounts;
 import com.sendwise.api.infra.persistence.CampaignEntity;
@@ -32,19 +35,22 @@ public class ResultService {
     private final RuleTables tables;
     private final OutboundQueue queue;
     private final Clock clock;
+    private final ObjectMapper mapper;
 
     public ResultService(
             MessageRepository messages,
             JdbcAccounts accounts,
             RuleTables tables,
             OutboundQueue queue,
-            Clock clock
+            Clock clock,
+            ObjectMapper mapper
     ) {
         this.messages = messages;
         this.accounts = accounts;
         this.tables = tables;
         this.queue = queue;
         this.clock = clock;
+        this.mapper = mapper;
     }
 
     @Transactional
@@ -115,7 +121,9 @@ public class ResultService {
     }
 
     private Long createFallback(MessageEntity message, CampaignEntity campaign) {
-        String text = "SAME".equals(campaign.getFallbackMode()) ? message.getBody() : campaign.getFallbackBody();
+        String text = "SAME".equals(campaign.getFallbackMode())
+                ? message.getBody()
+                : TemplateRender.render(campaign.getFallbackBody(), readVariables(message.getVariablesJson()));
         MessageRules rules = tables.rules();
         TextMeasure.Result sized = tables.measure().measure(text == null ? "" : text);
         long reserved = message.getReservedCost();
@@ -157,6 +165,7 @@ public class ResultService {
                 child.getRecipient(),
                 child.getBody(),
                 null,
+                null,
                 child.getPurpose(),
                 0,
                 campaign.getScheduledAt()
@@ -172,6 +181,18 @@ public class ResultService {
             queue.enqueue(item);
         }
         return child.getId();
+    }
+
+    private Map<String, String> readVariables(String json) {
+        if (json == null || json.isBlank()) {
+            return Map.of();
+        }
+        try {
+            return mapper.readValue(json, new TypeReference<LinkedHashMap<String, String>>() {
+            });
+        } catch (Exception exception) {
+            return Map.of();
+        }
     }
 
     private void refund(long clientId, long campaignId, long messageId, long amount) {
