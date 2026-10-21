@@ -1,0 +1,50 @@
+[
+  {
+    "name": "longest name sets the byte count",
+    "input": {
+      "template": "안녕 #{이름}님",
+      "variables": {
+        "이름": [
+          "김",
+          "홍길동입니다"
+        ]
+      }
+    },
+    "expected": {
+      "worst": {
+        "이름": "홍길동입니다"
+      },
+      "rendered": "안녕 홍길동입니다님",
+      "bytes": 19,
+      "channel": "SMS",
+      "overLimit": false,
+      "encodable": true,
+      "shortestBytes": 9,
+      "shortestChannel": "SMS"
+    }
+  },
+  {
+    "name": "worst value crosses the sms limit",
+    "input": {
+      "template": "#{이름}",
+      "variables": {
+        "이름": [
+          "가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가",
+          "가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가A"
+        ]
+      }
+    },
+    "expected": {
+      "worst": {
+        "이름": "가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가A"
+      },
+      "rendered": "가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가A",
+      "bytes": 91,
+      "channel": "LMS",
+      "overLimit": false,
+      "encodable": true,
+      "shortestBytes": 90,
+      "shortestChannel": "SMS"
+    }
+  }
+]
