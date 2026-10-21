@@ -1,0 +1,36 @@
+describe("send flow", () => {
+  it("sends a csv and checks the export", () => {
+    cy.visit("/");
+    cy.contains("a", "발송하기").click();
+    cy.get("textarea").first().type("안녕하세요");
+    cy.get('input[type="file"]').selectFile("cypress/fixtures/recipients.csv");
+    cy.get("[data-testid=group-valid]").should("contain", "4건");
+    cy.get("[data-testid=group-invalid]").should("contain", "1건");
+    cy.get("[data-testid=group-duplicate]").should("contain", "1건");
+    cy.get("[data-testid=group-opt-out]").should("contain", "0건");
+    cy.viewport(375, 812);
+    cy.get(".phone").should("be.visible");
+    cy.viewport(1280, 800);
+    cy.contains("label", "발신번호").find("select").select("0212345678");
+    cy.get("[data-testid=send-button]").should("be.enabled").click();
+    cy.contains("td", "LG U+").should("be.visible");
+    cy.contains("td", "INVALID_NUMBER").should("be.visible");
+    cy.contains("없는 번호라 전달하지 못했어요").should("be.visible");
+    cy.contains("button", "결과 엑셀 받기").click();
+    cy.contains("만드는 중이에요").should("be.visible");
+    cy.contains("button", "상태 확인").click();
+    cy.contains("a", "파일 받기").should("have.attr", "download", "campaign-results.xlsx");
+    cy.contains("a", "발신번호").click();
+    cy.contains("td", "0212345678").should("be.visible");
+    cy.contains("td", "승인").should("be.visible");
+    cy.contains("label", "새 발신번호").find("input").type("02-1111-2222");
+    cy.contains("button", "서류 제출").click();
+    cy.contains("td", "0211112222").should("be.visible");
+    cy.contains("button", "심사 요청").click();
+    cy.contains("td", "심사 중").should("be.visible");
+    cy.contains("a", "통계").click();
+    cy.contains("h2", "통신사별 실패율").should("be.visible");
+    cy.contains("h2", "공통 코드별 실패율").should("be.visible");
+    cy.contains("이 기간에는 실패가 없어요").should("not.exist");
+  });
+});
