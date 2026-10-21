@@ -1,0 +1,38 @@
+date: 2026-10-22
+
+environment:
+openjdk version "21.0.11" 2026-04-21
+OpenJDK Runtime Environment Homebrew (build 21.0.11)
+Darwin yeongjun-ui-Mac-mini.local 25.4.0 arm64
+hw.memsize=17179869184
+macOS 26.4.1 (25E253)
+
+command: apps/api/gradlew -p apps/api measureExcel -Pmode=sxssf
+jvmArgs: -Xmx3g
+
+raw:
+mode=sxssf
+dataRows=1000000
+java=21.0.11
+maxHeapBytes=3221225472
+fileBytes=13742464
+completed=true
+elapsedMillis=4147
+peakHeapBytes=165106024
+shutdownPeakHeapBytes=165106024
+
+command: apps/api/gradlew -p apps/api measureExcel -Pmode=xssf
+jvmArgs: -Xmx3g
+
+raw:
+mode=xssf
+dataRows=1000000
+java=21.0.11
+maxHeapBytes=3221225472
+error=OutOfMemoryError
+completed=false
+elapsedMillis=16836
+peakHeapBytes=3206883272
+shutdownPeakHeapBytes=3206883272
+
+note: both commands exited 0. XSSF caught OutOfMemoryError inside the process, so Gradle printed BUILD SUCCESSFUL. completed=false is the run result. Temp xlsx was deleted in finally. Header row is extra; dataRows is 1000000.

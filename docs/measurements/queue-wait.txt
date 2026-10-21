@@ -1,0 +1,35 @@
+command: apps/api/gradlew -p apps/api measureQueue
+jvmArgs: -Xmx512m
+date: 2026-10-22
+
+environment:
+openjdk version "21.0.11" 2026-04-21
+OpenJDK Runtime Environment Homebrew (build 21.0.11)
+Darwin yeongjun-ui-Mac-mini.local 25.4.0 arm64
+hw.memsize=17179869184
+macOS 26.4.1 (25E253)
+
+raw:
+clock=simulated
+adBacklog=100000
+authCount=1000
+ratePerSecond=100
+capacity=100
+java=21.0.11
+maxHeapBytes=536870912
+mode=priority
+authSeen=1000
+p95Index=949
+p95WaitNanos=8500000000
+minWaitNanos=0
+maxWaitNanos=9000000000
+wallClockMillis=41
+mode=fifo
+authSeen=1000
+p95Index=949
+p95WaitNanos=1008500000000
+minWaitNanos=999010000000
+maxWaitNanos=1009000000000
+wallClockMillis=38
+
+note: p95Index = ceil(0.95 * authSeen) - 1. p95WaitNanos is simulated bucket time, not wallClockMillis.
