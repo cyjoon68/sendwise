@@ -80,6 +80,7 @@ public class CarrierDispatcher implements SmartLifecycle {
                         message.getRecipient(),
                         message.getBody(),
                         message.getTemplateCode(),
+                        "ALIMTALK".equals(message.getChannel()) ? message.getVariablesJson() : null,
                         message.getPurpose(),
                         0,
                         message.getCampaign().getScheduledAt()
@@ -148,7 +149,11 @@ public class CarrierDispatcher implements SmartLifecycle {
             } else {
                 payload.put("templateCode", item.templateCode());
             }
-            payload.putNull("variables");
+            if ("ALIMTALK".equals(item.channel()) && item.variablesJson() != null && !item.variablesJson().isBlank()) {
+                payload.set("variables", mapper.readTree(item.variablesJson()));
+            } else {
+                payload.putNull("variables");
+            }
             HttpRequest request = HttpRequest.newBuilder(URI.create(baseUrl + "/send"))
                     .timeout(Duration.ofSeconds(5))
                     .header("Content-Type", "application/json")

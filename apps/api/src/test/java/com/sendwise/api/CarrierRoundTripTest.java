@@ -14,8 +14,11 @@ import org.testcontainers.containers.MySQLContainer;
 
 import java.net.InetSocketAddress;
 import java.nio.charset.StandardCharsets;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.atomic.AtomicReference;
 
@@ -33,6 +36,8 @@ class CarrierRoundTripTest {
     private static final HttpServer STUB;
     private static final int STUB_PORT;
     private static final ObjectMapper JSON = new ObjectMapper();
+    private static final String WELCOME = "안녕 #{name}";
+    private static final Pattern PLACEHOLDER = Pattern.compile("#\\{([^{}]+)}");
 
     static {
         MYSQL.start();
@@ -144,6 +149,135 @@ class CarrierRoundTripTest {
         assertEquals(1, hits(phone));
         assertEquals(before, jdbc.queryForObject("select amount from balance where client_id = 1", Long.class));
         MODE.set("202");
+    }
+
+    @Test
+    void matchedAlimtalkIsDeliveredWithoutFallback() throws Exception {
+        MODE.set("202");
+        String phone = "01020000000";
+        long campaignId = createRow("ALIMTALK", "NONE", null, WELCOME, phone, Map.of("name", "홍길동"), "WELCOME");
+        JsonNode sent = awaitBody(phone);
+        assertEquals("안녕 홍길동", sent.get("body").asText());
+        assertEquals("홍길동", sent.get("variables").get("name").asText());
+        assertTrue(templateMatches(WELCOME, sent));
+        long messageId = messageId(campaignId, phone);
+        ResponseEntity<Map> callback = rest.postForEntity("/carrier/SKT/results", Map.of(
+                "messageId", Long.toString(messageId),
+                "carrierCode", "0",
+                "commonCode", "SUCCESS"
+        ), Map.class);
+        assertEquals("DELIVERED", callback.getBody().get("status"));
+        assertEquals("SUCCESS", callback.getBody().get("commonCode"));
+        assertEquals(null, callback.getBody().get("fallbackMessageId"));
+        assertEquals(1, jdbc.queryForObject("select count(*) from message where campaign_id = ?", Integer.class, campaignId));
+    }
+
+    @Test
+    void mismatchedAlimtalkStartsSameFallback() throws Exception {
+        MODE.set("202");
+        String phone = "01020000003";
+        long campaignId = createRow("ALIMTALK", "SAME", null, "다른 문구", phone, Map.of("name", "홍길동"), "WELCOME");
+        JsonNode sent = awaitBody(phone);
+        assertEquals("다른 문구", sent.get("body").asText());
+        assertEquals("홍길동", sent.get("variables").get("name").asText());
+        assertTrue(!templateMatches(WELCOME, sent));
+        long messageId = messageId(campaignId, phone);
+        ResponseEntity<Map> callback = rest.postForEntity("/carrier/SKT/results", Map.of(
+                "messageId", Long.toString(messageId),
+                "carrierCode", "999",
+                "commonCode", "ETC"
+        ), Map.class);
+        assertEquals("FAILED", callback.getBody().get("status"));
+        assertEquals("ETC", callback.getBody().get("commonCode"));
+        long fallbackId = ((Number) callback.getBody().get("fallbackMessageId")).longValue();
+        assertEquals("SMS", jdbc.queryForObject("select channel from message where id = ?", String.class, fallbackId));
+        assertEquals("다른 문구", jdbc.queryForObject("select body from message where id = ?", String.class, fallbackId));
+        assertEquals(campaignId, jdbc.queryForObject("select campaign_id from message where id = ?", Long.class, fallbackId));
+    }
+
+    @Test
+    void mismatchedAlimtalkStartsCustomFallback() throws Exception {
+        MODE.set("202");
+        String phone = "01020000006";
+        long campaignId = createRow("ALIMTALK", "CUSTOM", "대체 #{name}", "다른 문구", phone, Map.of("name", "홍길동"), "WELCOME");
+        JsonNode sent = awaitBody(phone);
+        assertTrue(!templateMatches(WELCOME, sent));
+        long messageId = messageId(campaignId, phone);
+        ResponseEntity<Map> callback = rest.postForEntity("/carrier/SKT/results", Map.of(
+                "messageId", Long.toString(messageId),
+                "carrierCode", "999"
+        ), Map.class);
+        assertEquals("FAILED", callback.getBody().get("status"));
+        long fallbackId = ((Number) callback.getBody().get("fallbackMessageId")).longValue();
+        assertEquals("대체 홍길동", jdbc.queryForObject("select body from message where id = ?", String.class, fallbackId));
+        assertEquals(campaignId, jdbc.queryForObject("select campaign_id from message where id = ?", Long.class, fallbackId));
+    }
+
+    @Test
+    void smsSendsSubstitutedBodyWithoutVariables() throws Exception {
+        MODE.set("202");
+        String phone = "01020000009";
+        createRow("SMS", "NONE", null, "안녕 #{name}", phone, Map.of("name", "길동"), null);
+        JsonNode sent = awaitBody(phone);
+        assertEquals("안녕 길동", sent.get("body").asText());
+        assertTrue(sent.get("variables").isNull());
+        assertTrue(sent.get("templateCode").isNull());
+    }
+
+    private long createRow(
+            String channel,
+            String fallback,
+            String fallbackBody,
+            String text,
+            String phone,
+            Map<String, String> variables,
+            String template
+    ) {
+        Map<String, Object> body = new LinkedHashMap<>();
+        body.put("clientId", 1L);
+        body.put("channel", channel);
+        body.put("purpose", "NORMAL");
+        body.put("body", text);
+        body.put("fallback", fallback);
+        body.put("senderNumber", "0212345678");
+        Map<String, Object> row = new LinkedHashMap<>();
+        row.put("phone", phone);
+        row.put("variables", variables);
+        body.put("recipients", List.of(row));
+        if (fallbackBody != null) {
+            body.put("fallbackBody", fallbackBody);
+        }
+        if (template != null) {
+            body.put("templateCode", template);
+        }
+        ResponseEntity<Map> created = rest.postForEntity("/v1/campaigns", body, Map.class);
+        assertEquals(201, created.getStatusCode().value(), String.valueOf(created.getBody()));
+        return ((Number) created.getBody().get("id")).longValue();
+    }
+
+    private long messageId(long campaignId, String phone) {
+        return jdbc.queryForObject(
+                "select id from message where campaign_id = ? and recipient = ? and fallback_of_id is null",
+                Long.class,
+                campaignId,
+                phone
+        );
+    }
+
+    private boolean templateMatches(String template, JsonNode sent) {
+        Map<String, String> values = new LinkedHashMap<>();
+        JsonNode variables = sent.get("variables");
+        if (variables != null && variables.isObject()) {
+            variables.fields().forEachRemaining(entry -> values.put(entry.getKey(), entry.getValue().asText("")));
+        }
+        Matcher matcher = PLACEHOLDER.matcher(template);
+        StringBuilder rendered = new StringBuilder();
+        while (matcher.find()) {
+            String value = values.get(matcher.group(1));
+            matcher.appendReplacement(rendered, Matcher.quoteReplacement(value == null ? "" : value));
+        }
+        matcher.appendTail(rendered);
+        return rendered.toString().equals(sent.get("body").asText());
     }
 
     private long create(String channel, String fallback, String phone, String template) {
