@@ -1,0 +1,9 @@
+services:
+  mysql:
+    image: mysql:8.4
+    environment:
+      MYSQL_DATABASE: sendwise
+      MYSQL_USER: sendwise
+      MYSQL_PASSWORD: sendwise
+      MYSQL_ROOT_PASSWORD: root
+    ports: ["3306:3306"]
