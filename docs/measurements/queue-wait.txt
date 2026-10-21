@@ -1,3 +1,4 @@
+The clock is simulated (a model of the dispatcher, not a live run).
 command: apps/api/gradlew -p apps/api measureQueue
 jvmArgs: -Xmx512m
 date: 2026-10-22
