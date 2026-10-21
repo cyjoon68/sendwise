@@ -1,0 +1,60 @@
+server:
+  port: 8081
+
+spring:
+  application:
+    name: carrier-mock
+  jackson:
+    default-property-inclusion: non_null
+
+carrier-mock:
+  callback-base-url: http://localhost:8080
+  random-seed: 1
+  carriers:
+    SKT:
+      max-tps: 50
+      callback-delay-millis: 0
+      callback-loss-ratio: 0
+      latency:
+        distribution: fixed
+        min-millis: 0
+        max-millis: 0
+      failure-ratio:
+        INVALID_NUMBER: 0
+        OPTED_OUT: 0
+        DEVICE_OFF: 0
+        SPAM_BLOCKED: 0
+        ETC: 0
+    KT:
+      max-tps: 50
+      callback-delay-millis: 0
+      callback-loss-ratio: 0
+      latency:
+        distribution: fixed
+        min-millis: 0
+        max-millis: 0
+      failure-ratio:
+        INVALID_NUMBER: 0
+        OPTED_OUT: 0
+        DEVICE_OFF: 0
+        SPAM_BLOCKED: 0
+        ETC: 0
+    LGU:
+      max-tps: 50
+      callback-delay-millis: 0
+      callback-loss-ratio: 0
+      latency:
+        distribution: fixed
+        min-millis: 0
+        max-millis: 0
+      failure-ratio:
+        INVALID_NUMBER: 0
+        OPTED_OUT: 0
+        DEVICE_OFF: 0
+        SPAM_BLOCKED: 0
+        ETC: 0
+  templates:
+    - code: ORDER_SHIPPED
+      body: "#{name}님, 주문 #{orderNo}가 출고되었습니다."
+    - code: AUTH_CODE
+      body: "인증번호는 #{code}입니다."

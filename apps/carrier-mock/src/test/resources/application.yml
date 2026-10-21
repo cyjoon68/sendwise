@@ -1,0 +1,50 @@
+spring:
+  main:
+    banner-mode: off
+
+carrier-mock:
+  callback-base-url: http://127.0.0.1:9
+  random-seed: 7
+  carriers:
+    SKT:
+      max-tps: 1000
+      callback-delay-millis: 0
+      callback-loss-ratio: 0
+      latency:
+        distribution: fixed
+        min-millis: 0
+        max-millis: 0
+      failure-ratio:
+        INVALID_NUMBER: 0
+        OPTED_OUT: 0
+        DEVICE_OFF: 0
+        SPAM_BLOCKED: 0
+        ETC: 0
+    KT:
+      max-tps: 1000
+      callback-delay-millis: 0
+      callback-loss-ratio: 0
+      latency:
+        distribution: fixed
+        min-millis: 0
+        max-millis: 0
+      failure-ratio:
+        INVALID_NUMBER: 0
+        OPTED_OUT: 0
+        DEVICE_OFF: 0
+        SPAM_BLOCKED: 0
+        ETC: 0
+    LGU:
+      max-tps: 1000
+      callback-delay-millis: 0
+      callback-loss-ratio: 0
+      latency:
+        distribution: fixed
+        min-millis: 0
+        max-millis: 0
+      failure-ratio:
+        INVALID_NUMBER: 0
+        OPTED_OUT: 0
+        DEVICE_OFF: 0
+        SPAM_BLOCKED: 0
+        ETC: 0
